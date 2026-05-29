@@ -1,0 +1,7 @@
+/target/
+/.idea/
+/.vscode/
+*.pdb
+*.log
+taskbar-monitor.toml
+rust-gauge.toml

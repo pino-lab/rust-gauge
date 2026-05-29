@@ -1,0 +1,22 @@
+[package]
+name = "rust-gauge"
+version = "0.1.0"
+edition = "2021"
+description = "RustGauge: a lightweight Windows tray monitor written in Rust."
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+anyhow = "1"
+directories = "5"
+serde = { version = "1", features = ["derive"] }
+sysinfo = "0.30"
+tao = "0.34"
+toml = "0.8"
+tray-icon = "0.24"
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_Performance", "Win32_System_Registry"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = "z"
+strip = true

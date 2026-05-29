@@ -1,0 +1,14 @@
+app_name = "RustGauge"
+update_interval_ms = 1000
+enabled_metrics = ["cpu", "memory", "gpu", "network"]
+
+[icon]
+size = 32
+low_color = "#48c774"
+medium_color = "#ffdd57"
+high_color = "#f14668"
+track_color = "#2b2f36"
+
+[thresholds]
+medium = 60.0
+high = 85.0
