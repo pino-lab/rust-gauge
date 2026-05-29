@@ -4,32 +4,70 @@ Rust で作った軽量な Windows タスクトレイ監視ツールです。
 
 [English README](README.md)
 
-RustGauge は通知領域に常駐し、トレイアイコンとツールチップで選択したメトリクスを表示します。CPU とメモリ、ネットワーク通信量は `sysinfo` から取得します。GPU と NPU は、端末が公開している Windows PDH カウンターから取得します。
+RustGauge は Windows の通知領域に常駐し、選択したシステムメトリクスをトレイアイコンとツールチップで表示します。大きなダッシュボードではなく、常に邪魔にならない小さな状態表示を目的にしています。
 
 ## 機能
 
 - Windows の通知領域に常駐
-- CPU / MEM 使用率
+- CPU / メモリ使用率
 - ネットワーク通信量
-- `\GPU Engine(*)\Utilization Percentage` による GPU 使用率の取得
-- `\GPU Engine(*)\Utilization Percentage` をもとにした NPU 使用率の推定取得
-- Rust で実行時生成するタスクマネージャー風トレイアイコン
-- 選択した項目を表示するツールチップ
-- 右クリックの `Display` サブメニューで表示項目を切り替え
-- 右クリックの `Start with Windows` でユーザー単位の自動起動を切り替え
-- `Exit` メニュー
+- Windows PDH カウンターによる GPU 使用率の取得
+- compute-only の PDH カウンターをもとにした NPU 使用率の推定取得
+- タスクマネージャー風の動的トレイアイコン
+- 選択したメトリクスを表示するツールチップ
+- 右クリックメニューで表示項目、自動起動、終了を操作
+- テレメトリ送信や外部ネットワーク通信なし
 
-## 実行
+## インストール
+
+### リリース版を使う
+
+1. [Releases](https://github.com/pino-lab/rust-gauge/releases) を開きます。
+2. 最新の Windows 用 zip をダウンロードします。
+3. zip を好きな場所に展開します。
+4. `rust-gauge.exe` を実行します。
+
+RustGauge は通知領域で動作します。すぐに見つからない場合は、Windows タスクバーの隠れているインジケーターも確認してください。
+
+### ソースからビルドする
+
+Rust をインストールしてから、次を実行します。
+
+```powershell
+cargo build --release
+```
+
+実行ファイルは次の場所に作成されます。
+
+```text
+target\release\rust-gauge.exe
+```
+
+リポジトリから直接起動する場合は、次を実行します。
 
 ```powershell
 cargo run --release
 ```
 
-初回起動時に設定ファイルを作成します。開発中は、リポジトリ直下に `rust-gauge.toml` があればそれを優先します。無い場合はユーザー設定ディレクトリの設定ファイルを使います。
+## 使い方
 
-設定例は [config/example.toml](config/example.toml) を参照してください。
+`rust-gauge.exe` を起動します。トレイアイコンは自動で更新され、ツールチップに選択中のメトリクスが表示されます。
+
+トレイアイコンを右クリックするとメニューを開けます。
+
+- `Display`: 表示するメトリクスを選択します。
+- `Start with Windows`: Windows 起動時に RustGauge を自動起動するか切り替えます。
+- `Exit`: RustGauge を終了します。
+
+表示項目の変更は自動で保存されます。
 
 ## 設定
+
+初回起動時にユーザー設定ディレクトリへ設定ファイルを作成します。
+
+起動前にカレントディレクトリへ `rust-gauge.toml` を置いた場合は、そのファイルを優先して使います。
+
+設定例は [config/example.toml](config/example.toml) を参照してください。
 
 ```toml
 app_name = "RustGauge"
@@ -56,7 +94,7 @@ high = 85.0
 - `npu`
 - `network`
 
-GPU / NPU は端末やドライバーが対象の Windows パフォーマンスカウンターを公開していない場合、`unsupported` と表示されることがあります。
+`update_interval_ms` は最小 250 ms に丸められます。
 
 ## 自動起動
 
@@ -67,6 +105,14 @@ HKCU\Software\Microsoft\Windows\CurrentVersion\Run
 ```
 
 これはユーザー単位の設定で、管理者権限は不要です。
+
+`rust-gauge.exe` を別のフォルダへ移動した場合は、`Start with Windows` を一度オフにしてから再度オンにしてください。新しい場所で登録し直されます。
+
+## 補足
+
+GPU / NPU メトリクスは、端末やドライバーが公開している Windows パフォーマンスカウンターに依存します。利用できない場合は `unsupported` と表示されます。
+
+ネットワーク通信量はツールチップに表示されます。小さなトレイアイコンでは読み取りにくいため、アイコン表示は CPU、メモリ、GPU、NPU を中心にしています。
 
 ## プライバシー
 
@@ -83,9 +129,20 @@ RustGauge はローカルのシステムメトリクスだけを読み取り、�
 
 RustGauge は個人ファイル、ブラウザーデータ、プロセス一覧、ウィンドウタイトル、キー入力を収集しません。
 
+## トラブルシュート
+
+- 起動してもウィンドウが出ない: RustGauge はトレイアプリです。通知領域を確認してください。
+- GPU / NPU が `unsupported` になる: 対象の Windows パフォーマンスカウンターが利用できない環境です。
+- exe を移動したあと自動起動しない: `Start with Windows` を一度オフにしてから再度オンにしてください。
+- TOML を編集しても反映されない: 手で設定を変更したあとは RustGauge を再起動してください。
+
 ## 設計
 
 [docs/design.md](docs/design.md) を参照してください。
+
+## メンテナ向け
+
+リリース手順は [docs/release.md](docs/release.md) を参照してください。
 
 ## ライセンス
 

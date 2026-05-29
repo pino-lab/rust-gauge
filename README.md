@@ -4,32 +4,70 @@ A lightweight Windows tray monitor written in Rust.
 
 [日本語 README](README.ja.md)
 
-The app lives in the notification area and shows selected metrics in the tray tooltip. CPU and memory are collected through `sysinfo`. Network throughput is also collected through `sysinfo`. GPU and NPU are collected through Windows PDH counters when the machine exposes them.
+RustGauge stays in the Windows notification area and shows selected system metrics in the tray icon and tooltip. It is designed for a small always-on status view, not a full dashboard.
 
 ## Features
 
 - Tray resident app for Windows
 - CPU and memory usage
 - Network throughput
-- Best-effort GPU usage via `\GPU Engine(*)\Utilization Percentage`
-- Best-effort NPU usage inferred from compute-only `\GPU Engine(*)\Utilization Percentage` counters
+- Best-effort GPU usage via Windows PDH counters
+- Best-effort NPU usage inferred from compute-only PDH counters
 - Dynamic task-manager-style tray icon
 - Tooltip with selected metrics
-- Right-click `Display` submenu with checkable metric items
-- Right-click `Start with Windows` toggle for user-level startup registration
-- Exit menu item
+- Right-click menu for display toggles, startup registration, and exit
+- No telemetry or external network requests
 
-## Run
+## Install
+
+### Download a release
+
+1. Open the [Releases](https://github.com/pino-lab/rust-gauge/releases) page.
+2. Download the latest Windows zip.
+3. Extract the zip anywhere you like.
+4. Run `rust-gauge.exe`.
+
+RustGauge runs in the notification area. If you do not see it immediately, check the hidden tray icons menu in the Windows taskbar.
+
+### Build from source
+
+Install Rust, then run:
+
+```powershell
+cargo build --release
+```
+
+The executable is created at:
+
+```text
+target\release\rust-gauge.exe
+```
+
+You can also run it directly from the repository:
 
 ```powershell
 cargo run --release
 ```
 
-On first startup, the app creates a config file. During development, `rust-gauge.toml` in the repository root is preferred if it exists. Otherwise, the app uses the user config directory.
+## Usage
 
-See [config/example.toml](config/example.toml).
+Start `rust-gauge.exe`. The tray icon updates automatically, and the tooltip shows the selected metrics.
 
-## Config
+Right-click the tray icon to open the menu:
+
+- `Display`: choose which metrics appear in the tray status and tooltip.
+- `Start with Windows`: register or unregister RustGauge for user-level startup.
+- `Exit`: close RustGauge.
+
+Display changes are saved automatically.
+
+## Configuration
+
+On first startup, RustGauge creates a config file in the user config directory.
+
+You can also place `rust-gauge.toml` in the current working directory before starting RustGauge. If that file exists, RustGauge uses it instead of the user config file.
+
+See [config/example.toml](config/example.toml):
 
 ```toml
 app_name = "RustGauge"
@@ -56,23 +94,25 @@ Supported `enabled_metrics` values:
 - `npu`
 - `network`
 
-GPU/NPU may show as `unsupported` on machines that do not expose those Windows performance counters.
-
-## Tray Icon
-
-The tray icon is generated in Rust at runtime instead of using copied bitmap assets. It draws CPU, memory, GPU, and NPU horizontally. Network stays in the tooltip only.
-
-The colors are inspired by Windows Task Manager. Network stays in the tooltip only because it is harder to read as a tiny icon meter.
+`update_interval_ms` is clamped to a minimum of 250 ms.
 
 ## Startup
 
-`Start with Windows` registers the current executable in:
+When `Start with Windows` is enabled, RustGauge registers the current executable in:
 
 ```text
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run
 ```
 
 This is a per-user setting and does not require administrator privileges.
+
+If you move `rust-gauge.exe` to another folder, disable and enable `Start with Windows` again so the startup entry points to the new path.
+
+## Notes
+
+GPU and NPU metrics depend on Windows performance counters exposed by the machine and driver. If they are not available, RustGauge shows them as `unsupported`.
+
+Network is shown in the tooltip. The tray icon focuses on CPU, memory, GPU, and NPU because network throughput is harder to read as a tiny meter.
 
 ## Privacy
 
@@ -89,9 +129,20 @@ The app reads:
 
 RustGauge does not collect personal files, browser data, process lists, window titles, or keystrokes.
 
+## Troubleshooting
+
+- The app started but no window appears: RustGauge is a tray app. Check the notification area.
+- GPU or NPU shows `unsupported`: the required Windows performance counters are not available on that machine.
+- Startup does not work after moving the exe: toggle `Start with Windows` off and on again.
+- Config changes do not appear: restart RustGauge after editing TOML by hand.
+
 ## Design
 
 See [docs/design.md](docs/design.md).
+
+## Maintainers
+
+See [docs/release.md](docs/release.md) for the release checklist.
 
 ## License
 
